@@ -942,7 +942,7 @@ begin
         end
 end
 
-always @(*)
+always @(FA[6:5])
 begin
     case(FA[6:5])
         2'b00 : XDO <= RAMB[Addrs];
