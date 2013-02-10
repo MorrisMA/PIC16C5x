@@ -508,9 +508,9 @@ assign dALU_Op[11] = dWE_F;
 always @(posedge Clk)
 begin
     if(Rst)
-        #1 dIR <= 9'b0_0000_0000;
+        dIR <= #1 9'b0_0000_0000;
     else if(CE)
-        #1 dIR <= (Skip ? 9'b0_0000_0000 : 
+        dIR <= #1 (Skip ? 9'b0_0000_0000 : 
                           {dOPTION, 
                            dTRISC,  dTRISB, dTRISA,
                            dCLRWDT, dSLEEP, 
@@ -522,9 +522,9 @@ end
 always @(posedge Clk)
 begin
     if(Rst)
-        #1 ALU_Op <= 12'b0;
+        ALU_Op <= #1 12'b0;
     else if(CE)
-        #1 ALU_Op <= (Skip ? 12'b0 : dALU_Op);
+        ALU_Op <= #1 (Skip ? 12'b0 : dALU_Op);
 end
 
 //  Literal Operand Pipeline Register
@@ -532,9 +532,9 @@ end
 always @(posedge Clk)
 begin
     if(Rst)
-        #1 KI <= 9'b0;
+        KI <= #1 9'b0;
     else if(CE)
-        #1 KI <= (Skip ? KI : IR[8:0]);
+        KI <= #1 (Skip ? KI : IR[8:0]);
 end
 
 //  Unimplemented Instruction Error Register
@@ -542,9 +542,9 @@ end
 always @(posedge Clk)
 begin
     if(Rst)
-        #1 Err <= 0;
+        Err <= #1 0;
     else if(CE)
-        #1 Err <= dErr;
+        Err <= #1 dErr;
 end
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -638,7 +638,7 @@ assign {C_Out, X[7:4]} = A[7:4] + Y[7:4] + DC_In;
 
 assign LU_Op = ALU_Op[1:0];
 
-always @(A or B or LU_Op)
+always @(*)
 begin
     case (LU_Op)
         2'b00 : V = ~A;
@@ -652,7 +652,7 @@ end
 
 assign S_Sel = ALU_Op[1:0];
 
-always @(S_Sel or C or A or B)
+always @(*)
 begin
     case (S_Sel)
         2'b00 : S = B;                  // Pass Working Register (MOVWF)
@@ -668,7 +668,7 @@ assign Bit = ALU_Op[2:0];
 assign Set = ALU_Op[3];
 assign Tst = ALU_Op[8];
 
-always @(Bit)
+always @(*)
 begin
     case(Bit)
         3'b000  : Msk = 8'b0000_0001;
@@ -691,7 +691,7 @@ assign g = Tst ? (Set ? |T : ~|T) : 1'b0;
 
 assign D_Sel = ALU_Op[7:6];
 
-always @(D_Sel or X or V or U or S)
+always @(*)
 begin
     case (D_Sel)
         2'b00 : DO = X;  // Arithmetic Unit Output
@@ -708,9 +708,9 @@ assign WE_W = CE & ALU_Op[10];
 always @(posedge Clk)
 begin
     if(POR)
-        #1 W <= 8'b0;
+        W <= #1 8'b0;
     else if(CE)
-        #1 W <= (WE_W ? DO : W);
+        W <= #1 (WE_W ? DO : W);
 end
 
 //  Z Register
@@ -721,9 +721,9 @@ assign Z_Tst = ~|DO;
 always @(posedge Clk)
 begin
     if(POR)
-        #1 Z <= 1'b0;
+        Z <= #1 1'b0;
     else if(CE)
-        #1 Z <= (Z_Sel  ? Z_Tst :
+        Z <= #1 (Z_Sel  ? Z_Tst :
                 (WE_PSW ? DO[2] : Z));
 end
 
@@ -734,9 +734,9 @@ assign DC_Sel = ALU_Op[5] & ALU_Op[4];
 always @(posedge Clk)
 begin
     if(POR)
-        #1 DC <= 1'b0;
+        DC <= #1 1'b0;
     else if(CE)
-        #1 DC <= (DC_Sel ? DC_In : 
+        DC <= #1 (DC_Sel ? DC_In : 
                  (WE_PSW ? DO[1] : DC));
 end
 
@@ -749,9 +749,9 @@ assign C_Drv = (~ALU_Op[7] & ~ALU_Op[6]) ? C_Out : (S_Dir ? A[7] : A[0]);
 always @(posedge Clk)
 begin
     if(POR)
-        #1 C <= 1'b0;
+        C <= #1 1'b0;
     else if(CE)
-        #1 C <= (C_Sel  ? C_Drv : 
+        C <= #1 (C_Sel  ? C_Drv : 
                 (WE_PSW ? DO[0] : C));
 end
 
@@ -774,8 +774,7 @@ assign WE_OPTION = dIR[8];
 
 //  Skip Logic
 
-always @(Tst or ALU_Op or g    or Z_Tst 
-             or GOTO   or CALL or RETLW or WE_SLEEP or WE_PCL)
+always @(*)
 begin
     Skip <= WE_SLEEP | WE_PCL
             | (Tst ? ((ALU_Op[1] & ALU_Op[0]) ? g    : Z_Tst) 
@@ -820,9 +819,9 @@ assign Ld_PCL = CALL | WE_PCL;
 always @(posedge Clk)
 begin
     if(Rst)
-        #1 PC <= 12'hFFF;   // Set PC to Reset Vector on Rst or WDT Timeout
+        PC <= #1 12'hFFF;   // Set PC to Reset Vector on Rst or WDT Timeout
     else if(CE)
-        #1 PC <= (GOTO ? {PA, KI} 
+        PC <= #1 (GOTO ? {PA, KI} 
                        : (Ld_PCL ? {PA, 1'b0, DO} 
                                  : (RETLW ? TOS : PC + 1)));
 end
@@ -832,17 +831,17 @@ end
 always @(posedge Clk)
 begin
     if(POR)
-        #1 TOS <= 12'h000;  // Clr TOS on Rst or WDT Timeout
+        TOS <= #1 12'h000;  // Clr TOS on Rst or WDT Timeout
     else if(CE)
-        #1 TOS <= (CALL ? PC : (RETLW ? NOS : TOS));
+        TOS <= #1 (CALL ? PC : (RETLW ? NOS : TOS));
 end
 
 always @(posedge Clk)
 begin
     if(POR)
-        #1 NOS <= 12'h000;  // Clr NOS on Rst or WDT Timeout
+        NOS <= #1 12'h000;  // Clr NOS on Rst or WDT Timeout
     else if(CE)
-        #1 NOS <= (CALL ? TOS : NOS);
+        NOS <= #1 (CALL ? TOS : NOS);
 end
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -853,17 +852,17 @@ always @(posedge Clk)
 begin
     if(POR)
         begin
-            #1 OPTION <= 8'b0011_1111;
-            #1 TRISA  <= 8'b1111_1111;
-            #1 TRISB  <= 8'b1111_1111;
-            #1 TRISC  <= 8'b1111_1111;
+            OPTION <= #1 8'b0011_1111;
+            TRISA  <= #1 8'b1111_1111;
+            TRISB  <= #1 8'b1111_1111;
+            TRISC  <= #1 8'b1111_1111;
         end
     else if(CE)
         begin
-            if(WE_OPTION) #1 OPTION <= W;
-            if(WE_TRISA)  #1 TRISA  <= W;
-            if(WE_TRISB)  #1 TRISB  <= W;
-            if(WE_TRISC)  #1 TRISC  <= W;
+            if(WE_OPTION) OPTION <= #1 W;
+            if(WE_TRISA)  TRISA  <= #1 W;
+            if(WE_TRISB)  TRISB  <= #1 W;
+            if(WE_TRISC)  TRISC  <= #1 W;
         end
 end
 
@@ -874,9 +873,9 @@ end
 always @(posedge Clk)
 begin
     if(Rst)
-        #1 WDTClr <= 1'b0;
+        WDTClr <= #1 1'b0;
     else
-        #1 WDTClr <= (WE_WDTCLR | WE_SLEEP) & ~PwrDn;
+        WDTClr <= #1 (WE_WDTCLR | WE_SLEEP) & ~PwrDn;
 end
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -888,9 +887,9 @@ assign Rst_TO = (POR | (MCLR & PD) | WE_WDTCLR);
 always @(posedge Clk)
 begin
     if(Rst_TO)
-        #1 TO <= 1'b0;
+        TO <= #1 1'b0;
     else if(WDT_TO)
-        #1 TO <= 1'b1;
+        TO <= #1 1'b1;
 end
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -903,9 +902,9 @@ assign Set_PD = WE_SLEEP;
 always @(posedge Clk)
 begin
     if(Rst_PD)
-        #1 PD <= 1'b0;
+        PD <= #1 1'b0;
     else if(Set_PD)
-        #1 PD <= 1'b1;
+        PD <= #1 1'b1;
 end
 
 //  PwrDn - Sleep Mode Control FF: Set by SLEEP instruction, cleared by Rst
@@ -915,9 +914,9 @@ end
 always @(posedge Clk)
 begin
     if(Rst)
-        #1 PwrDn <= 1'b0;
+        PwrDn <= #1 1'b0;
     else if(WE_SLEEP)
-        #1 PwrDn <= 1'b1;
+        PwrDn <= #1 1'b1;
 end
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -935,15 +934,15 @@ always @(posedge Clk)
 begin
     if(CE)
         begin
-            if(WE_RAMA) #1 RAMA[Addrs] <= DO;
-            if(WE_RAMB) #1 RAMB[Addrs] <= DO;
-            if(WE_RAMC) #1 RAMC[Addrs] <= DO;
-            if(WE_RAMD) #1 RAMD[Addrs] <= DO;
-            if(WE_RAME) #1 RAME[Addrs] <= DO;
+            if(WE_RAMA) RAMA[Addrs] <= #1 DO;
+            if(WE_RAMB) RAMB[Addrs] <= #1 DO;
+            if(WE_RAMC) RAMC[Addrs] <= #1 DO;
+            if(WE_RAMD) RAMD[Addrs] <= #1 DO;
+            if(WE_RAME) RAME[Addrs] <= #1 DO;
         end
 end
 
-always @(FA or Addrs)
+always @(*)
 begin
     case(FA[6:5])
         2'b00 : XDO = RAMB[Addrs];
@@ -961,19 +960,19 @@ always @(posedge Clk)
 begin
     if(POR)
         begin
-            #1 PA    <= 3'b0;
-            #1 FSR   <= 8'b0;
-            #1 PORTA <= 8'b1111_1111;
-            #1 PORTB <= 8'b1111_1111;
-            #1 PORTC <= 8'b1111_1111;
+            PA    <= #1 3'b0;
+            FSR   <= #1 8'b0;
+            PORTA <= #1 8'b1111_1111;
+            PORTB <= #1 8'b1111_1111;
+            PORTC <= #1 8'b1111_1111;
         end
     else if(CE) 
         begin
-            if(WE_STATUS) #1 PA    <= DO[7:5];
-            if(WE_FSR)    #1 FSR   <= DO;
-            if(WE_PORTA)  #1 PORTA <= DO;
-            if(WE_PORTB)  #1 PORTB <= DO;
-            if(WE_PORTC)  #1 PORTC <= DO;
+            if(WE_STATUS) PA    <= #1 DO[7:5];
+            if(WE_FSR)    FSR   <= #1 DO;
+            if(WE_PORTA)  PORTA <= #1 DO;
+            if(WE_PORTB)  PORTB <= #1 DO;
+            if(WE_PORTC)  PORTC <= #1 DO;
         end
 end
 
@@ -987,12 +986,7 @@ assign STATUS = {PA, ~TO, ~PD, Z, DC, C};
 
 //  Special Function Register (SFR) Multiplexers
 
-always @(FA,
-         TMR0, PC, STATUS, FSR, 
-         PORTA, PORTB, PORTC, 
-         TRISA, TRISB, TRISC,
-         PA_DI, PB_DI, PC_DI,
-         PA_DO, PB_DO, PC_DO)
+always @(*)
 begin
     case(FA[2:0])
         3'b000 :  SFR = 8'b0;
@@ -1029,9 +1023,9 @@ assign WDT_Rst = Rst | WDTClr;
 always @(posedge Clk)
 begin
 	if(WDT_Rst)
-		#1 WDT <= 0;
+		WDT <= #1 0;
 	else if (WDTE)
-		#1 WDT <= WDT + 1;
+		WDT <= #1 WDT + 1;
 end
 
 //  WDT synchronous TC FF
@@ -1039,9 +1033,9 @@ end
 always @(posedge Clk)
 begin
 	if(WDT_Rst)
-		#1 WDT_TC <= 0;
+		WDT_TC <= #1 0;
 	else
-		#1 WDT_TC <= &WDT;
+		WDT_TC <= #1 &WDT;
 end
 
 // WDT Timeout multiplexer
@@ -1066,12 +1060,12 @@ assign WDT_TO = (PSA ? PSC_Pls : WDT_TC);
 always @(posedge Clk)
 begin
 	if(Rst)
-		#1 dT0CKI <= 3'b0;
+		dT0CKI <= #1 3'b0;
 	else
 		begin
-			#1 dT0CKI[0] <= T0CKI;                              // Synch FF #1
-			#1 dT0CKI[1] <= dT0CKI[0];                          // Synch FF #2
-			#1 dT0CKI[2] <= (T0SE ? (dT0CKI[1] & ~dT0CKI[0])    // Falling Edge
+			dT0CKI[0] <= #1 T0CKI;                              // Synch FF #1
+			dT0CKI[1] <= #1 dT0CKI[0];                          // Synch FF #2
+			dT0CKI[2] <= #1 (T0SE ? (dT0CKI[1] & ~dT0CKI[0])    // Falling Edge
                                   : (dT0CKI[0] & ~dT0CKI[1]));  // Rising Edge
 		end
 end
@@ -1092,14 +1086,14 @@ assign CE_PSCntr = (PSA ? WDT_TC : Tmr0_CS);
 always @(posedge Clk)
 begin
 	if(Rst_PSC)
-		#1 PSCntr <= 8'b0;
+		PSCntr <= #1 8'b0;
 	else if (CE_PSCntr)
-		#1 PSCntr <= PSCntr + 1;
+		PSCntr <= #1 PSCntr + 1;
 end
 
 //	Prescaler Counter Output Multiplexer
 
-always @(PSCntr or PS)
+always @(*)
 begin
 	case (PS)
 		3'b000 : PSC_Out = PSCntr[0];
@@ -1118,11 +1112,11 @@ end
 always @(posedge Clk)
 begin
 	if(POR)
-		#1 dPSC_Out <= 0;
+		dPSC_Out <= 0;
 	else
 		begin
-			#1 dPSC_Out[0] <= PSC_Out;
-			#1 dPSC_Out[1] <= PSC_Out & ~dPSC_Out[0];
+			dPSC_Out[0] <= #1 PSC_Out;
+			dPSC_Out[1] <= #1 PSC_Out & ~dPSC_Out[0];
 		end
 end
 
@@ -1137,11 +1131,11 @@ assign CE_Tmr0 = (PSA ? Tmr0_CS : PSC_Pls);
 always @(posedge Clk)
 begin
 	if(POR)
-		#1 TMR0 <= 0;
+		TMR0 <= #1 0;
 	else if(WE_TMR0)
-        #1 TMR0 <= DO;
+        TMR0 <= #1 DO;
     else if(CE_Tmr0)
-		#1 TMR0 <= TMR0 + 1;
+		TMR0 <= TMR0 + 1;
 end
 
 endmodule
