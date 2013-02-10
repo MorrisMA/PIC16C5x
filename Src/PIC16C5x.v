@@ -641,10 +641,10 @@ assign LU_Op = ALU_Op[1:0];
 always @(*)
 begin
     case (LU_Op)
-        2'b00 : V = ~A;
-        2'b01 : V =  A | B;
-        2'b10 : V =  A & B;
-        2'b11 : V =  A ^ B;
+        2'b00 : V <= ~A;
+        2'b01 : V <=  A | B;
+        2'b10 : V <=  A & B;
+        2'b11 : V <=  A ^ B;
     endcase
 end
 
@@ -655,10 +655,10 @@ assign S_Sel = ALU_Op[1:0];
 always @(*)
 begin
     case (S_Sel)
-        2'b00 : S = B;                  // Pass Working Register (MOVWF)
-        2'b01 : S = {A[3:0], A[7:4]};   // Swap Nibbles (SWAPF)
-        2'b10 : S = {C, A[7:1]};        // Shift Right (RRF)
-        2'b11 : S = {A[6:0], C};        // Shift Left (RLF)
+        2'b00 : S <= B;                  // Pass Working Register (MOVWF)
+        2'b01 : S <= {A[3:0], A[7:4]};   // Swap Nibbles (SWAPF)
+        2'b10 : S <= {C, A[7:1]};        // Shift Right (RRF)
+        2'b11 : S <= {A[6:0], C};        // Shift Left (RLF)
     endcase
 end
 
@@ -671,14 +671,14 @@ assign Tst = ALU_Op[8];
 always @(*)
 begin
     case(Bit)
-        3'b000  : Msk = 8'b0000_0001;
-        3'b001  : Msk = 8'b0000_0010;
-        3'b010  : Msk = 8'b0000_0100;
-        3'b011  : Msk = 8'b0000_1000;
-        3'b100  : Msk = 8'b0001_0000;
-        3'b101  : Msk = 8'b0010_0000;
-        3'b110  : Msk = 8'b0100_0000;
-        3'b111  : Msk = 8'b1000_0000;
+        3'b000  : Msk <= 8'b0000_0001;
+        3'b001  : Msk <= 8'b0000_0010;
+        3'b010  : Msk <= 8'b0000_0100;
+        3'b011  : Msk <= 8'b0000_1000;
+        3'b100  : Msk <= 8'b0001_0000;
+        3'b101  : Msk <= 8'b0010_0000;
+        3'b110  : Msk <= 8'b0100_0000;
+        3'b111  : Msk <= 8'b1000_0000;
     endcase
 end
 
@@ -694,10 +694,10 @@ assign D_Sel = ALU_Op[7:6];
 always @(*)
 begin
     case (D_Sel)
-        2'b00 : DO = X;  // Arithmetic Unit Output
-        2'b01 : DO = V;  // Logic Unit Output
-        2'b10 : DO = S;  // Shifter Output
-        2'b11 : DO = U;  // Bit Processor Output
+        2'b00 : DO <= X;  // Arithmetic Unit Output
+        2'b01 : DO <= V;  // Logic Unit Output
+        2'b10 : DO <= S;  // Shifter Output
+        2'b11 : DO <= U;  // Bit Processor Output
     endcase
 end
 
@@ -945,10 +945,10 @@ end
 always @(*)
 begin
     case(FA[6:5])
-        2'b00 : XDO = RAMB[Addrs];
-        2'b01 : XDO = RAMC[Addrs];
-        2'b10 : XDO = RAMD[Addrs];
-        2'B11 : XDO = RAME[Addrs];
+        2'b00 : XDO <= RAMB[Addrs];
+        2'b01 : XDO <= RAMC[Addrs];
+        2'b10 : XDO <= RAMD[Addrs];
+        2'B11 : XDO <= RAME[Addrs];
     endcase
 end
 
@@ -989,14 +989,14 @@ assign STATUS = {PA, ~TO, ~PD, Z, DC, C};
 always @(*)
 begin
     case(FA[2:0])
-        3'b000 :  SFR = 8'b0;
-        3'b001 :  SFR = TMR0;
-        3'b010 :  SFR = PC[7:0];
-        3'b011 :  SFR = STATUS;
-        3'b100 :  SFR = FSR;
-        3'b101 :  SFR = {4'b0, ((PA_DI & TRISA) | PA_DO)};
-        3'b110 :  SFR = ((PB_DI & TRISB) | PB_DO);
-        3'b111 :  SFR = ((PC_DI & TRISC) | PC_DO);
+        3'b000 :  SFR <= 8'b0;
+        3'b001 :  SFR <= TMR0;
+        3'b010 :  SFR <= PC[7:0];
+        3'b011 :  SFR <= STATUS;
+        3'b100 :  SFR <= FSR;
+        3'b101 :  SFR <= {4'b0, ((PA_DI & TRISA) | PA_DO)};
+        3'b110 :  SFR <= ((PB_DI & TRISB) | PB_DO);
+        3'b111 :  SFR <= ((PC_DI & TRISC) | PC_DO);
     endcase
 end
 
@@ -1096,14 +1096,14 @@ end
 always @(*)
 begin
 	case (PS)
-		3'b000 : PSC_Out = PSCntr[0];
-		3'b001 : PSC_Out = PSCntr[1];
-		3'b010 : PSC_Out = PSCntr[2];
-		3'b011 : PSC_Out = PSCntr[3];
-		3'b100 : PSC_Out = PSCntr[4];
-		3'b101 : PSC_Out = PSCntr[5];
-		3'b110 : PSC_Out = PSCntr[6];
-		3'b111 : PSC_Out = PSCntr[7];
+		3'b000 : PSC_Out <= PSCntr[0];
+		3'b001 : PSC_Out <= PSCntr[1];
+		3'b010 : PSC_Out <= PSCntr[2];
+		3'b011 : PSC_Out <= PSCntr[3];
+		3'b100 : PSC_Out <= PSCntr[4];
+		3'b101 : PSC_Out <= PSCntr[5];
+		3'b110 : PSC_Out <= PSCntr[6];
+		3'b111 : PSC_Out <= PSCntr[7];
 	endcase
 end
 
@@ -1135,7 +1135,7 @@ begin
 	else if(WE_TMR0)
         TMR0 <= #1 DO;
     else if(CE_Tmr0)
-		TMR0 <= TMR0 + 1;
+		TMR0 <= #1 TMR0 + 1;
 end
 
 endmodule
