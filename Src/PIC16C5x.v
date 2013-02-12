@@ -1,4 +1,4 @@
-///////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
 //  Copyright 2008-2013 by Michael A. Morris, dba M. A. Morris & Associates
 //
@@ -9,7 +9,7 @@
 //  information storage and retrieval system in violation of the license under
 //  which the source code is released.
 //
-//  The source code contained herein is free; it may be redistributed and/or 
+//  The source code contained herein is free; it may be redistributed and/or
 //  modified in accordance with the terms of the GNU Lesser General Public
 //  License as published by the Free Software Foundation; either version 2.1 of
 //  the GNU Lesser General Public License, or any later version.
@@ -28,35 +28,35 @@
 //  Boston, MA  02110-1301 USA
 //
 //  Further, no use of this source code is permitted in any form or means
-//  without inclusion of this banner prominently in any derived works. 
+//  without inclusion of this banner prominently in any derived works.
 //
 //  Michael A. Morris
 //  Huntsville, AL
 //
-///////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 `timescale 1ns / 1ps
 
 ////////////////////////////////////////////////////////////////////////////////
-// Company: 		M. A. Morris & Associates
-// Engineer: 		Michael A. Morris
-// 
-// Create Date:    	11:30:15 01/13/2008 
-// Design Name: 	PIC16C5x
-// Module Name:    	C:/ISEProjects/ISE10.1i/P16C5x/PIC16C5x_Top.v
-// Project Name: 	PIC16C5x
-// Target Devices:	N/A 
-// Tool versions:	ISE 8.2i 
+// Company:         M. A. Morris & Associates
+// Engineer:        Michael A. Morris
 //
-// Description: Module implements a pipelined PIC16C5x processor. The processor 
+// Create Date:     11:30:15 01/13/2008
+// Design Name:     PIC16C5x
+// Module Name:     C:/ISEProjects/ISE10.1i/P16C5x/PIC16C5x_Top.v
+// Project Name:    PIC16C5x
+// Target Devices:  N/A
+// Tool versions:   ISEWebPACK 10.1i SP3
+//
+// Description: Module implements a pipelined PIC16C5x processor. The processor
 //              implements all PIC16C5x instructions and the normal peripherals
-//              
 //
-// Dependencies:	None 
 //
-// Revision: 
+// Dependencies:    None
 //
-// 	0.00 	08A13	MAM	    File Created
+// Revision:
+//
+//  0.00    08A13   MAM     File Created
 //
 //  0.01    08B14   MAM     Initial Completion. Fully Built
 //
@@ -73,14 +73,14 @@
 //                          execution of processor. Only an external reset or
 //                          a Watchdog Timer Timeout will restart execution of
 //                          the processor through the reset vector location.
-//  
+//
 //  0.04    08B27   MAM     Modified the SKIP signal to include the SLEEP in-
 //                          struction. Modified the PD and TO FFs to accept
-//                          WE_WDTCLR as the reset signal. This moves up the 
-//                          clearing of the TO and PD FFs by one clock cyle, 
+//                          WE_WDTCLR as the reset signal. This moves up the
+//                          clearing of the TO and PD FFs by one clock cyle,
 //                          which means that the CLRWDT; BTFSx STATUS,{TO | PD}
 //                          instruction sequence will execute correctly. Before
-//                          this change, that instruction sequence would not 
+//                          this change, that instruction sequence would not
 //                          detect the change in either of these two FFs be-
 //                          cause the synchronous reset action was not being
 //                          effected before the test during the execution phase
@@ -91,9 +91,9 @@
 //                          these bits (Table 10-2: Instruction Set Summary)
 //                          will write the File Register bus into these bits.
 //                          The DECFSZ and INCFSZ instructions are excluded in
-//                          this list; theyshould never be directed to use 
-//                          STATUS since it might result in a non-terminating 
-//                          loop. To include these two instructions, remove 
+//                          this list; theyshould never be directed to use
+//                          STATUS since it might result in a non-terminating
+//                          loop. To include these two instructions, remove
 //                          ALU_Op[8], Test, from the write enable equation.
 //
 //  0.06    08B28   MAM     Added load function to TMR0.
@@ -104,16 +104,16 @@
 //  1.00    08B28   MAM     Initial Release
 //
 //  1.01    08B29   MAM     Added WE_PCL to Skip in order to implement the com-
-//                          puted GOTO functionality which occurs when File 
-//                          register writes occur to the PCL Special Function 
-//                          Register address. The change in the execution 
+//                          puted GOTO functionality which occurs when File
+//                          register writes occur to the PCL Special Function
+//                          Register address. The change in the execution
 //                          sequence which occurs requires that the instruction
 //                          pipeline be flushed while the new destination
 //                          is being fetched and decoded.
 //
 //  1.02    13B10   MAM     Converted to Verilog-2001
 //
-// Additional Comments: 
+// Additional Comments:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -121,21 +121,21 @@ module PIC16C5x #(
     parameter WDT_Size = 20     // Use 20 for synthesis, Use 10 for Simulation
 )(
     input   POR,                // In  - System Power-On Reset
-     
+
     input   Clk,                // In  - System Clock
     input   ClkEn,              // In  - Processor Clock Enable
- 
+
     output  reg [11:0] PC,      // Out - Program Counter
     input   [11:0] IR,          // In  - Instruction Register
 
-    output  reg [3:0] TRISA,    // Out - Port A Tri-state Control Register 
+    output  reg [3:0] TRISA,    // Out - Port A Tri-state Control Register
     output  reg [3:0] PORTA,    // Out - Port A Data Register
     input   [3:0] PA_DI,        // In  - Port A Input Pins
- 
+
     output  reg [7:0] TRISB,    // Out - Port B Tri-state Control Register
     output  reg [7:0] PORTB,    // Out - Port B Data Register
     input   [7:0] PB_DI,        // In  - Port B Input Pins
- 
+
     output  reg [7:0] TRISC,    // Out - Port C Tri-state Control Register
     output  reg [7:0] PORTC,    // Out - Port C Data Register
     input   [7:0] PC_DI,        // In  - Port C Input Pins
@@ -143,19 +143,19 @@ module PIC16C5x #(
     input   MCLR,               // In  - Master Clear Input
     input   T0CKI,              // In  - Timer 0 Clock Input
 
-    input   WDTE,               // In  - Watchdog Timer Enable 
+    input   WDTE,               // In  - Watchdog Timer Enable
 //
 //  Debug Outputs
 //
     output  reg Err,            // Out - Instruction Decode Error Output
 
     output  reg [5:0] OPTION,   // Out - Processor Configuration Register Output
-    
+
     output  reg [ 8:0] dIR,     // Out - Pipeline Register (Non-ALU Instruct.)
     output  reg [11:0] ALU_Op,  // Out - Pipeline Register (ALU Instructions)
     output  reg [ 8:0] KI,      // Out - Pipeline Register (Literal)
     output  reg Skip,           // Out - Skip Next Instruction
-    
+
     output  reg [11:0] TOS,     // Out - Top-Of-Stack Register Output
     output  reg [11:0] NOS,     // Out - Next-On-Stack Register Output
 
@@ -164,18 +164,18 @@ module PIC16C5x #(
     output  [6:0] FA,           // Out - File Address Output
     output  reg [7:0] DO,       // Out - File Data Input/ALU Data Output
     output  [7:0] DI,           // Out - File Data Output/ALU Data Input
-    
+
     output  reg [7:0] TMR0,     // Out - Timer 0 Timer/Counter Output
     output  reg [7:0] FSR,      // Out - File Select Register Output
     output  [7:0] STATUS,       // Out - Processor Status Register Output
-    
+
     output  T0CKI_Pls,          // Out - Timer 0 Clock Edge Pulse Output
 
     output  reg WDTClr,         // Out - Watchdog Timer Clear Output
     output  reg [WDT_Size-1:0] WDT, // Out - Watchdog Timer
     output  reg WDT_TC,
     output  WDT_TO,             // Out - Watchdog Timer Timeout Output
-    
+
     output  reg [7:0] PSCntr,   // Out - Prescaler Counter Output
     output  PSC_Pls             // Out - Prescaler Count Pulse Output
 );
@@ -249,7 +249,7 @@ module PIC16C5x #(
 //
 //  PIC16C5x Family Opcodes
 
-localparam OP_NOP    = 12'b0000_0000_0000;   // No Operation 
+localparam OP_NOP    = 12'b0000_0000_0000;   // No Operation
 localparam OP_OPTION = 12'b0000_0000_0010;   // Set Option Register
 localparam OP_SLEEP  = 12'b0000_0000_0011;   // Set Sleep Register
 localparam OP_CLRWDT = 12'b0000_0000_0100;   // Clear Watchdog Timer
@@ -262,7 +262,7 @@ localparam OP_CLRF   =  7'b0000_011; // F = 0; Z;
 localparam OP_SUBWF  =  6'b0000_10;  // D ? F = F - W : W = F - W; Z, C, DC;
 localparam OP_DECF   =  6'b0000_11;  // D ? F = F - 1 : W = F - 1; Z;
 //
-localparam OP_IORWF  =  6'b0001_00;  // D ? F = F | W : W = F | W; Z; 
+localparam OP_IORWF  =  6'b0001_00;  // D ? F = F | W : W = F | W; Z;
 localparam OP_ANDWF  =  6'b0001_01;  // D ? F = F & W : W = F & W; Z;
 localparam OP_XORWF  =  6'b0001_10;  // D ? F = F ^ W : W = F ^ W; Z;
 localparam OP_ADDWF  =  6'b0001_11;  // D ? F = F + W : W = F + W; Z, C, DC;
@@ -274,7 +274,7 @@ localparam OP_DECFSZ =  6'b0010_11;  // D ? F = F - 1 : W = F - 1; skip if Z;
 //
 localparam OP_RRF    =  6'b0011_00;  // D ? F = {C,F[7:1]} : W={C,F[7:1]};C=F[0]
 localparam OP_RLF    =  6'b0011_01;  // D ? F = {F[6:0],C} : W={F[6:0],C};C=F[7]
-localparam OP_SWAPF  =  6'b0011_10;  // D ? F = t : W = t; t = {F[3:0], F[7:4]} 
+localparam OP_SWAPF  =  6'b0011_10;  // D ? F = t : W = t; t = {F[3:0], F[7:4]}
 localparam OP_INCFSZ =  6'b0011_11;  // D ? F = F - 1 : W = F - 1; skip if Z;
 //
 localparam OP_BCF    =  4'b0100;     // F = F & ~(1 << bit);
@@ -342,7 +342,7 @@ wire    WE_TRISA, WE_TRISB, WE_TRISC;
 wire    WE_OPTION;
 
 wire    WE_TMR0;            // Write Enable Signals Decoded from FA[4:0]
-wire    WE_PCL;    
+wire    WE_PCL;
 wire    WE_STATUS;
 wire    WE_FSR;
 wire    WE_PORTA;
@@ -355,7 +355,7 @@ wire    WE_PSW;             // Write Enable for STATUS[2:0]: {Z, DC, C}
 //
 //  Instruction Decoder Declarations
 //
-   
+
 wire    dNOP, dOPTION, dSLEEP, dCLRWDT, dTRISA, dTRISB, dTRISC;
 wire    dMOVWF, dCLRW, dCLRF, dSUBWF, dDECF;
 wire    dIORWF, dANDWF, dXORWF, dADDWF;
@@ -374,8 +374,8 @@ wire    [11:0] dALU_Op;
 //
 //  ALU Declarations
 //
-   
-wire    [7:0] A, B;     // ALU Data Input Bus inputs: 
+
+wire    [7:0] A, B;     // ALU Data Input Bus inputs:
                         //  A - external data: {DI | KI}
                         //  B - {W, ~W, 0x00, 0xFF}
 
@@ -461,7 +461,7 @@ assign dXORLW  = (OP_XORLW  == IR[11:8]);
 assign dErr    = ~|{dNOP,   dOPTION, dSLEEP, dCLRWDT, dTRISA, dTRISB, dTRISC,
                     dMOVWF, dCLRW,   dCLRF,  dSUBWF,  dDECF,
                     dIORWF, dANDWF,  dXORWF, dADDWF,
-                    dMOVF,  dCOMF,   dINCF,  dDECFSZ,  
+                    dMOVF,  dCOMF,   dINCF,  dDECFSZ,
                     dRRF,   dRLF,    dSWAPF, dINCFSZ,
                     dBCF,   dBSF,    dBTFSC, dBTFSS,
                     dRETLW, dCALL,   dGOTO,  dMOVLW,  dIORLW, dANDLW, dXORLW};
@@ -481,9 +481,9 @@ assign dWE_F = |{dBP_Op, ((dAU_Op | dLU_Op | dSU_Op) &  IR[5]), dMOVWF, dCLRF};
 assign dWE_W = |{dLW_Op, ((dAU_Op | dLU_Op | dSU_Op) & ~IR[5])};
 
 
-assign dALU_Op[ 0] = (dBP_Op ? IR[5] : |{dSUBWF, dINCF, dINCFSZ, 
+assign dALU_Op[ 0] = (dBP_Op ? IR[5] : |{dSUBWF, dINCF, dINCFSZ,
                                          dIORLW, dXORLW,
-                                         dIORWF, dXORWF, 
+                                         dIORWF, dXORWF,
                                          dRLF,   dSWAPF});
 assign dALU_Op[ 1] = (dBP_Op ? IR[6] : |{dSUBWF, dDECF,  dDECFSZ,
                                          dANDWF, dXORWF, dANDLW,  dXORLW,
@@ -491,7 +491,7 @@ assign dALU_Op[ 1] = (dBP_Op ? IR[6] : |{dSUBWF, dDECF,  dDECFSZ,
 assign dALU_Op[ 2] = (dBP_Op ? IR[7] : |{dSUBWF, dADDWF, dMOVWF,
                                          dIORWF, dANDWF, dXORWF,
                                          dIORLW, dANDLW, dXORLW});
-assign dALU_Op[ 3] = |{dBSF, dBTFSS,   dCALL,  dRETLW, 
+assign dALU_Op[ 3] = |{dBSF, dBTFSS,   dCALL,  dRETLW,
                        dMOVLW, dIORLW, dANDLW, dXORLW};
 assign dALU_Op[ 4] = |{dSUBWF, dADDWF, dRRF, dRLF};
 assign dALU_Op[ 5] = |{dSUBWF, dDECF,  dADDWF, dINCF,  dMOVF,
@@ -510,10 +510,10 @@ begin
     if(Rst)
         dIR <= #1 9'b0_0000_0000;
     else if(CE)
-        dIR <= #1 (Skip ? 9'b0_0000_0000 : 
-                          {dOPTION, 
+        dIR <= #1 (Skip ? 9'b0_0000_0000
+                        : {dOPTION,
                            dTRISC,  dTRISB, dTRISA,
-                           dCLRWDT, dSLEEP, 
+                           dCLRWDT, dSLEEP,
                            dRETLW,  dCALL,  dGOTO});
 end
 
@@ -558,12 +558,12 @@ end
 //
 //  ALU_Op[1:0] = ALU Unit Operation Code
 //
-//      Arithmetic Unit (AU): 00 => Y = A +  B; 
+//      Arithmetic Unit (AU): 00 => Y = A +  B;
 //                            01 => Y = A +  B + 1;
 //                            10 => Y = A + ~B     = A - B - 1;
 //                            11 => Y = A + ~B + 1 = A - B;
 //
-//      Logic Unit (LU):      00 => V = ~A; 
+//      Logic Unit (LU):      00 => V = ~A;
 //                            01 => V =  A & B;
 //                            10 => V =  A | B;
 //                            11 => V =  A ^ B;
@@ -573,20 +573,20 @@ end
 //                            10 => S = {C, A[7:1]};      // RRF
 //                            11 => S = {A[6:0], C};      // RLF
 //
-//  ALU_Op[3:2] = ALU Operand: 
+//  ALU_Op[3:2] = ALU Operand:
 //                  A      B
-//          00 =>  File    0 
+//          00 =>  File    0
 //          01 =>  File    W
 //          10 => Literal  0
 //          11 => Literal  W;
 //
 //  ALU Operations - Bit Processor (BP)
 //
-//  ALU_Op[2:0] = Bit Select: 000 => Bit 0; 
+//  ALU_Op[2:0] = Bit Select: 000 => Bit 0;
 //                            001 => Bit 1;
 //                            010 => Bit 2;
 //                            011 => Bit 3;
-//                            100 => Bit 4; 
+//                            100 => Bit 4;
 //                            101 => Bit 5;
 //                            110 => Bit 6;
 //                            111 => Bit 7;
@@ -595,7 +595,7 @@ end
 //                   1 - Set Selected Bit;
 //
 //  ALU_Op[5:4] = Status Flag Update Select
-//          
+//
 //          00 => None
 //          01 => C
 //          10 => Z
@@ -633,7 +633,7 @@ assign Y = B_Inv ? ~B : B;
 
 assign {DC_In, X[3:0]} = A[3:0] + Y[3:0] + C_In;
 assign {C_Out, X[7:4]} = A[7:4] + Y[7:4] + DC_In;
- 
+
 //  Logic Unit (LU)
 
 assign LU_Op = ALU_Op[1:0];
@@ -723,8 +723,7 @@ begin
     if(POR)
         Z <= #1 1'b0;
     else if(CE)
-        Z <= #1 (Z_Sel  ? Z_Tst :
-                (WE_PSW ? DO[2] : Z));
+        Z <= #1 (Z_Sel  ? Z_Tst : (WE_PSW ? DO[2] : Z));
 end
 
 //  Digit Carry (DC) Register
@@ -736,8 +735,7 @@ begin
     if(POR)
         DC <= #1 1'b0;
     else if(CE)
-        DC <= #1 (DC_Sel ? DC_In : 
-                 (WE_PSW ? DO[1] : DC));
+        DC <= #1 (DC_Sel ? DC_In : (WE_PSW ? DO[1] : DC));
 end
 
 //  Carry (C) Register
@@ -745,14 +743,13 @@ end
 assign C_Sel = ALU_Op[4];
 assign S_Dir = ALU_Op[1] & ALU_Op[0];
 assign C_Drv = (~ALU_Op[7] & ~ALU_Op[6]) ? C_Out : (S_Dir ? A[7] : A[0]);
- 
+
 always @(posedge Clk)
 begin
     if(POR)
         C <= #1 1'b0;
     else if(CE)
-        C <= #1 (C_Sel  ? C_Drv : 
-                (WE_PSW ? DO[0] : C));
+        C <= #1 (C_Sel  ? C_Drv : (WE_PSW ? DO[0] : C));
 end
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -777,7 +774,7 @@ assign WE_OPTION = dIR[8];
 always @(*)
 begin
     Skip <= WE_SLEEP | WE_PCL
-            | (Tst ? ((ALU_Op[1] & ALU_Op[0]) ? g    : Z_Tst) 
+            | (Tst ? ((ALU_Op[1] & ALU_Op[0]) ? g    : Z_Tst)
                    : ((GOTO | CALL | RETLW)   ? 1'b1 : 1'b0 ));
 end
 
@@ -821,8 +818,8 @@ begin
     if(Rst)
         PC <= #1 12'hFFF;   // Set PC to Reset Vector on Rst or WDT Timeout
     else if(CE)
-        PC <= #1 (GOTO ? {PA, KI} 
-                       : (Ld_PCL ? {PA, 1'b0, DO} 
+        PC <= #1 (GOTO ? {PA, KI}
+                       : (Ld_PCL ? {PA, 1'b0, DO}
                                  : (RETLW ? TOS : PC + 1)));
 end
 
@@ -850,20 +847,17 @@ end
 
 always @(posedge Clk)
 begin
-    if(POR)
-        begin
-            OPTION <= #1 8'b0011_1111;
-            TRISA  <= #1 8'b1111_1111;
-            TRISB  <= #1 8'b1111_1111;
-            TRISC  <= #1 8'b1111_1111;
-        end
-    else if(CE)
-        begin
-            if(WE_OPTION) OPTION <= #1 W;
-            if(WE_TRISA)  TRISA  <= #1 W;
-            if(WE_TRISB)  TRISB  <= #1 W;
-            if(WE_TRISC)  TRISC  <= #1 W;
-        end
+    if(POR) begin
+        OPTION <= #1 8'b0011_1111;
+        TRISA  <= #1 8'b1111_1111;
+        TRISB  <= #1 8'b1111_1111;
+        TRISC  <= #1 8'b1111_1111;
+    end else if(CE) begin
+        if(WE_OPTION) OPTION <= #1 W;
+        if(WE_TRISA)  TRISA  <= #1 W;
+        if(WE_TRISB)  TRISB  <= #1 W;
+        if(WE_TRISC)  TRISC  <= #1 W;
+    end
 end
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -932,14 +926,13 @@ assign WE_RAME = WE_F &  FA[4] &  FA[6] &  FA[5];
 
 always @(posedge Clk)
 begin
-    if(CE)
-        begin
-            if(WE_RAMA) RAMA[Addrs] <= #1 DO;
-            if(WE_RAMB) RAMB[Addrs] <= #1 DO;
-            if(WE_RAMC) RAMC[Addrs] <= #1 DO;
-            if(WE_RAMD) RAMD[Addrs] <= #1 DO;
-            if(WE_RAME) RAME[Addrs] <= #1 DO;
-        end
+    if(CE) begin
+        if(WE_RAMA) RAMA[Addrs] <= #1 DO;
+        if(WE_RAMB) RAMB[Addrs] <= #1 DO;
+        if(WE_RAMC) RAMC[Addrs] <= #1 DO;
+        if(WE_RAMD) RAMD[Addrs] <= #1 DO;
+        if(WE_RAME) RAME[Addrs] <= #1 DO;
+    end
 end
 
 always @(FA[6:5])
@@ -958,22 +951,19 @@ end
 
 always @(posedge Clk)
 begin
-    if(POR)
-        begin
-            PA    <= #1 3'b0;
-            FSR   <= #1 8'b0;
-            PORTA <= #1 8'b1111_1111;
-            PORTB <= #1 8'b1111_1111;
-            PORTC <= #1 8'b1111_1111;
-        end
-    else if(CE) 
-        begin
-            if(WE_STATUS) PA    <= #1 DO[7:5];
-            if(WE_FSR)    FSR   <= #1 DO;
-            if(WE_PORTA)  PORTA <= #1 DO;
-            if(WE_PORTB)  PORTB <= #1 DO;
-            if(WE_PORTC)  PORTC <= #1 DO;
-        end
+    if(POR) begin
+        PA    <= #1 3'b0;
+        FSR   <= #1 8'b0;
+        PORTA <= #1 8'b1111_1111;
+        PORTB <= #1 8'b1111_1111;
+        PORTC <= #1 8'b1111_1111;
+    end else if(CE) begin
+        if(WE_STATUS) PA    <= #1 DO[7:5];
+        if(WE_FSR)    FSR   <= #1 DO;
+        if(WE_PORTA)  PORTA <= #1 DO;
+        if(WE_PORTB)  PORTB <= #1 DO;
+        if(WE_PORTC)  PORTC <= #1 DO;
+    end
 end
 
 assign PA_DO = PORTA & ~TRISA;
@@ -1009,46 +999,46 @@ assign DI = (FA[4] ? XDO : (FA[3] ? RAMA[Addrs] : SFR));
 //
 //  Watchdog Timer and Timer0 Implementation- see Figure 8-6
 //
-//	OPTION Register Assignments
+//  OPTION Register Assignments
 
-assign T0CS = OPTION[5];	 // Timer0 Clock Source:   1 - T0CKI,  0 - Clk
-assign T0SE = OPTION[4];	 // Timer0 Source Edge:    1 - FE,     0 - RE
-assign PSA  = OPTION[3];	 // Pre-Scaler Assignment: 1 - WDT,    0 - Timer0
+assign T0CS = OPTION[5];     // Timer0 Clock Source:   1 - T0CKI,  0 - Clk
+assign T0SE = OPTION[4];     // Timer0 Source Edge:    1 - FE,     0 - RE
+assign PSA  = OPTION[3];     // Pre-Scaler Assignment: 1 - WDT,    0 - Timer0
 assign PS   = OPTION[2:0];   // Pre-Scaler Count: Timer0 - 2^(PS+1), WDT - 2^PS
-	
+
 // WDT - Watchdog Timer
 
 assign WDT_Rst = Rst | WDTClr;
 
 always @(posedge Clk)
 begin
-	if(WDT_Rst)
-		WDT <= #1 0;
-	else if (WDTE)
-		WDT <= #1 WDT + 1;
+    if(WDT_Rst)
+        WDT <= #1 0;
+    else if (WDTE)
+        WDT <= #1 WDT + 1;
 end
 
 //  WDT synchronous TC FF
 
 always @(posedge Clk)
 begin
-	if(WDT_Rst)
-		WDT_TC <= #1 0;
-	else
-		WDT_TC <= #1 &WDT;
+    if(WDT_Rst)
+        WDT_TC <= #1 0;
+    else
+        WDT_TC <= #1 &WDT;
 end
 
 // WDT Timeout multiplexer
 
 assign WDT_TO = (PSA ? PSC_Pls : WDT_TC);
- 
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  T0CKI RE/FE Pulse Generator (on Input rather than after PSCntr)
-//      
-//      Device implements an XOR on T0CKI and a clock multiplexer for the 
+//
+//      Device implements an XOR on T0CKI and a clock multiplexer for the
 //      Prescaler since it has two clock asynchronous clock sources: the WDT
-//      or the external T0CKI (Timer0 Clock Input). Instead of this type of 
+//      or the external T0CKI (Timer0 Clock Input). Instead of this type of
 //      gated clock ripple counter implementation of the Prescaler, a fully
 //      synchronous implementation has been selected. Thus, the T0CKI must be
 //      synchronized and the falling or rising edge detected as determined by
@@ -1059,20 +1049,19 @@ assign WDT_TO = (PSA ? PSC_Pls : WDT_TC);
 
 always @(posedge Clk)
 begin
-	if(Rst)
-		dT0CKI <= #1 3'b0;
-	else
-		begin
-			dT0CKI[0] <= #1 T0CKI;                              // Synch FF #1
-			dT0CKI[1] <= #1 dT0CKI[0];                          // Synch FF #2
-			dT0CKI[2] <= #1 (T0SE ? (dT0CKI[1] & ~dT0CKI[0])    // Falling Edge
-                                  : (dT0CKI[0] & ~dT0CKI[1]));  // Rising Edge
-		end
+    if(Rst)
+        dT0CKI <= #1 3'b0;
+    else begin
+        dT0CKI[0] <= #1 T0CKI;                              // Synch FF #1
+        dT0CKI[1] <= #1 dT0CKI[0];                          // Synch FF #2
+        dT0CKI[2] <= #1 (T0SE ? (dT0CKI[1] & ~dT0CKI[0])    // Falling Edge
+                              : (dT0CKI[0] & ~dT0CKI[1]));  // Rising Edge
+    end
 end
 
 assign T0CKI_Pls = dT0CKI[2]; // T0CKI Pulse out, either FE/RE
 
-//	Tmr0 Clock Source Multiplexer
+//  Tmr0 Clock Source Multiplexer
 
 assign Tmr0_CS = (T0CS ? T0CKI_Pls : CE);
 
@@ -1085,39 +1074,39 @@ assign CE_PSCntr = (PSA ? WDT_TC : Tmr0_CS);
 
 always @(posedge Clk)
 begin
-	if(Rst_PSC)
-		PSCntr <= #1 8'b0;
-	else if (CE_PSCntr)
-		PSCntr <= #1 PSCntr + 1;
+    if(Rst_PSC)
+        PSCntr <= #1 8'b0;
+    else if (CE_PSCntr)
+        PSCntr <= #1 PSCntr + 1;
 end
 
-//	Prescaler Counter Output Multiplexer
+//  Prescaler Counter Output Multiplexer
 
 always @(*)
 begin
-	case (PS)
-		3'b000 : PSC_Out <= PSCntr[0];
-		3'b001 : PSC_Out <= PSCntr[1];
-		3'b010 : PSC_Out <= PSCntr[2];
-		3'b011 : PSC_Out <= PSCntr[3];
-		3'b100 : PSC_Out <= PSCntr[4];
-		3'b101 : PSC_Out <= PSCntr[5];
-		3'b110 : PSC_Out <= PSCntr[6];
-		3'b111 : PSC_Out <= PSCntr[7];
-	endcase
+    case (PS)
+        3'b000 : PSC_Out <= PSCntr[0];
+        3'b001 : PSC_Out <= PSCntr[1];
+        3'b010 : PSC_Out <= PSCntr[2];
+        3'b011 : PSC_Out <= PSCntr[3];
+        3'b100 : PSC_Out <= PSCntr[4];
+        3'b101 : PSC_Out <= PSCntr[5];
+        3'b110 : PSC_Out <= PSCntr[6];
+        3'b111 : PSC_Out <= PSCntr[7];
+    endcase
 end
 
 // Prescaler Counter Rising Edge Detector
 
 always @(posedge Clk)
 begin
-	if(POR)
-		dPSC_Out <= 0;
-	else
-		begin
-			dPSC_Out[0] <= #1 PSC_Out;
-			dPSC_Out[1] <= #1 PSC_Out & ~dPSC_Out[0];
-		end
+    if(POR)
+        dPSC_Out <= 0;
+    else
+        begin
+            dPSC_Out[0] <= #1 PSC_Out;
+            dPSC_Out[1] <= #1 PSC_Out & ~dPSC_Out[0];
+        end
 end
 
 assign PSC_Pls = dPSC_Out[1];
@@ -1130,12 +1119,12 @@ assign CE_Tmr0 = (PSA ? Tmr0_CS : PSC_Pls);
 
 always @(posedge Clk)
 begin
-	if(POR)
-		TMR0 <= #1 0;
-	else if(WE_TMR0)
+    if(POR)
+        TMR0 <= #1 0;
+    else if(WE_TMR0)
         TMR0 <= #1 DO;
     else if(CE_Tmr0)
-		TMR0 <= #1 TMR0 + 1;
+        TMR0 <= #1 TMR0 + 1;
 end
 
 endmodule

@@ -1,7 +1,7 @@
 PIC16C5x : A Microcontroller Core in Verilog
 =======================
 
-Copyright (C) 2012, Michael A. Morris <morrisma@mchsi.com>.
+Copyright (C) 2013, Michael A. Morris <morrisma@mchsi.com>.
 All Rights Reserved.
 
 Released under LGPL.
