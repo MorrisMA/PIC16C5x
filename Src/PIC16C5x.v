@@ -113,6 +113,12 @@
 //
 //  1.02    13B10   MAM     Converted to Verilog-2001
 //
+//  1.10    13G20   MAM     Corrected error in BTFSC/BTFSS not detected by the
+//                          test bench. Skip logic qualifier for bit test signal
+//                          using wrong two bits of ALU_Op[1:0] instead of
+//                          ALU_Op[7:6]. Correction made. Additional tests not
+//                          added to testbench at this time.
+//
 // Additional Comments:
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -774,7 +780,7 @@ assign WE_OPTION = dIR[8];
 always @(*)
 begin
     Skip <= WE_SLEEP | WE_PCL
-            | (Tst ? ((ALU_Op[1] & ALU_Op[0]) ? g    : Z_Tst)
+            | (Tst ? ((ALU_Op[7] & ALU_Op[6]) ? g    : Z_Tst)
                    : ((GOTO | CALL | RETLW)   ? 1'b1 : 1'b0 ));
 end
 
@@ -1101,12 +1107,11 @@ end
 always @(posedge Clk)
 begin
     if(POR)
-        dPSC_Out <= 0;
-    else
-        begin
-            dPSC_Out[0] <= #1 PSC_Out;
-            dPSC_Out[1] <= #1 PSC_Out & ~dPSC_Out[0];
-        end
+        dPSC_Out <= #1 0;
+    else begin
+        dPSC_Out[0] <= #1 PSC_Out;
+        dPSC_Out[1] <= #1 PSC_Out & ~dPSC_Out[0];
+    end
 end
 
 assign PSC_Pls = dPSC_Out[1];
