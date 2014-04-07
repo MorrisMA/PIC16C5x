@@ -30,7 +30,7 @@ the period of the PIC16C5x core's watch dog timer.
 Implementation
 --------------
 
-The PIC16C5x core is implemented as a single Verilog-2001 csource file.
+The PIC16C5x core is implemented as a single Verilog-2001 source file.
 
     PIC16C5x.v                  -- RTL source file for the PIC16C5x core
         tb_PIC16C5x.v           -- Rudimentary testbench
